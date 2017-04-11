@@ -110,6 +110,8 @@ $cache = new $cfg['class']($cfg);
 
 
 # 在Windwork中使用缓存组件
+在Windwork项目中设置好缓存配置后，使用cache()函数访问缓存对象实例。
+
 1、在配置文件 config/app.php中设置缓存配置（默认使用文件缓存）
 ```
 // config/app.php
@@ -147,7 +149,7 @@ return [
 ];
 ```
 
-1、使用缓存组件
+2、使用缓存组件
 ```
 // 读取 
 cache()->read('some/var/data');
