@@ -1,12 +1,13 @@
 <?php
 require_once '../lib/ACache.php';
-require_once '../lib/adapter/Redis.php';
+require_once '../lib/strategy/Redis.php';
 
 
 /**
  * File test case.
  */
-class RedisTest extends PHPUnit_Framework_TestCase {
+class RedisTest extends PHPUnit_Framework_TestCase 
+{
 	
 	/**
 	 *
@@ -17,7 +18,8 @@ class RedisTest extends PHPUnit_Framework_TestCase {
 	/**
 	 * Prepares the environment before running a test.
 	 */
-	protected function setUp() {
+	protected function setUp() 
+	{
 		parent::setUp ();
 		$cfg = array(
 			// 缓存设置
@@ -25,7 +27,7 @@ class RedisTest extends PHPUnit_Framework_TestCase {
 		    'dir'               => 'data/cache',       // 
 		    'expire'            => 3600,               // 缓存更新周期(默认：3600s)
 			'compress'          => 0,                  // 是否启用缓存内容压缩后存贮
-		    'adapter'           => 'Redis',
+		    'class'             => '',
 		    // redis 设置
 		    'redis' => [
     			'host'           => '127.0.0.1',     //
@@ -36,27 +38,30 @@ class RedisTest extends PHPUnit_Framework_TestCase {
 		    ],
 		);
 
-		$this->cache = new \wf\cache\adapter\Redis($cfg);
+		$this->cache = new \wf\cache\strategy\Redis($cfg);
 	}
 	
 	/**
 	 * Cleans up the environment after running a test.
 	 */
-	protected function tearDown() {
+	protected function tearDown() 
+	{
 		parent::tearDown ();
 	}
 	
 	/**
 	 * Constructs the test case.
 	 */
-	public function __construct() {
+	public function __construct() 
+	{
 	}
 	
 	/**
 	 * Tests File->write()
 	 * Tests File->read()
 	 */
-	public function testReadWrite() {
+	public function testReadWrite() 
+	{
 		$cacheKey = 'unit_test/key-read-write';
 		$value = 'test value';
 		// write, expire in 2 second
@@ -93,7 +98,8 @@ class RedisTest extends PHPUnit_Framework_TestCase {
 	 * Tests File->write()
 	 * Tests File->read()
 	 */
-	public function testDelete() {
+	public function testDelete() 
+	{
 		$cacheKey = 'unit_test/key-read-write';
 		$value = 'test value';
 		
@@ -106,7 +112,8 @@ class RedisTest extends PHPUnit_Framework_TestCase {
 		
 	}	
 	
-	public function testClear() {
+	public function testClear() 
+	{
 		$cacheKey = 'unit_test/key-read-write';
 		$value = 'test value';
 		

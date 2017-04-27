@@ -4,22 +4,23 @@
  * 
  * 一个开源的PHP轻量级高效Web开发框架
  * 
- * @copyright   Copyright (c) 2008-2016 Windwork Team. (http://www.windwork.org)
+ * @copyright   Copyright (c) 2008-2017 Windwork Team. (http://www.windwork.org)
  * @license     http://opensource.org/licenses/MIT	MIT License
  */
-namespace wf\cache\adapter;
+namespace wf\cache\strategy;
 
 use \wf\cache\Exception;
 
 /**
  * 文件缓存操作实现类
  * 
- * @package     wf.cache.adapter
+ * @package     wf.cache.strategy
  * @author      cm <cmpan@qq.com>
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class File extends \wf\cache\ACache {
+class File extends \wf\cache\ACache 
+{
 	const CACHE_SUMMARY = "<?php\n/**\n * Auto generate by windwork cache engine,please don't edit me.\n */\nexit;\n?>";
 	
 	/**
@@ -28,7 +29,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return \wf\cache\ACache
 	 */
-	protected function lock($key) {
+	protected function lock($key) 
+	{
 		$cachePath = $this->getCachePath($key);
 		$cacheDir  = dirname($cachePath);
 		if(!is_dir($cacheDir)) {
@@ -52,7 +54,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return bool
 	 */
-	protected function isLocked($key) {
+	protected function isLocked($key) 
+	{
 		$cachePath = $this->getCachePath($key);
 		clearstatcache();
 		return is_file($cachePath . '.lock');
@@ -64,7 +67,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return string
 	 */
-	private function getCachePath($key) {
+	private function getCachePath($key) 
+	{
 		$path = $this->cacheDir . "/{$key}.php";
 		$path = static::safePath($path);
 		return $path;
@@ -77,7 +81,8 @@ class File extends \wf\cache\ACache {
 	 * @param mixed $value
 	 * @param int $expire = null  如果要设置不删除缓存，请设置一个大点的整数
 	 */
-	public function write($key, $value, $expire = null) {
+	public function write($key, $value, $expire = null) 
+	{
 		if (!$this->enabled) {
 			return ;
 		}
@@ -110,7 +115,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return mixed
 	 */
-	public function read($key) {
+	public function read($key) 
+	{
 		if (!$this->enabled) {
 			return null;
 		}
@@ -149,7 +155,8 @@ class File extends \wf\cache\ACache {
 	 *
 	 * @param string $key
 	 */
-	public function delete($key) {
+	public function delete($key) 
+	{
 		if(empty($key)) {
 			return false;
 		}
@@ -171,7 +178,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $dir = ''
 	 * @return \wf\cache\ACache
 	 */
-	public function clear($dir = '') {
+	public function clear($dir = '') 
+	{
 		$dir = $this->getCachePath($dir);
 		$dir = dirname($dir);
 		
@@ -186,7 +194,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return \wf\cache\ACache
 	 */
-	protected function unlock($key) {
+	protected function unlock($key) 
+	{
 		$cachePath = $this->getCachePath($key);
 		@unlink($cachePath . '.lock');
 		
@@ -202,7 +211,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $value 缓存变量的值
 	 * @return bool
 	 */
-	private function store($key, $value) {
+	private function store($key, $value) 
+	{
 		$cachePath = $this->getCachePath($key);
 		$cacheDir  = dirname($cachePath);
 	
@@ -228,7 +238,8 @@ class File extends \wf\cache\ACache {
 	 * @param bool $rmSelf = false 是否删除本身
 	 * @return bool
 	 */
-	private static function clearDir($dir, $rmSelf = false) {
+	private static function clearDir($dir, $rmSelf = false) 
+	{
 		$dir = rtrim($dir, '/');
 		
 		// 不处理非法路径
@@ -264,7 +275,8 @@ class File extends \wf\cache\ACache {
 	 * @param string $path
 	 * @return string
 	 */
-	private static function safePath($path) {
+	private static function safePath($path) 
+	{
 		$path = str_replace('\\', '/', $path);
 		$path = preg_replace('/(\.+\\/)/', './', $path);
 		$path = preg_replace('/(\\/+)/', '/', $path);

@@ -4,7 +4,7 @@
  * 
  * 一个开源的PHP轻量级高效Web开发框架
  * 
- * @copyright   Copyright (c) 2008-2016 Windwork Team. (http://www.windwork.org)
+ * @copyright   Copyright (c) 2008-2017 Windwork Team. (http://www.windwork.org)
  * @license     http://opensource.org/licenses/MIT	MIT License
  */
 namespace wf\cache;
@@ -19,7 +19,8 @@ namespace wf\cache;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-abstract class ACache {
+abstract class ACache 
+{
 	/**
 	 * 缓存读取次数
 	 * @var int
@@ -81,7 +82,8 @@ abstract class ACache {
 	 * 构造函数中设置缓存实例相关选项
 	 * @param array $cfg
 	 */
-	public function __construct(array $cfg) {
+	public function __construct(array $cfg) 
+	{
 	    // 一旦启用缓存、启用内容压缩就不能再停用，因此只在构造函数中赋值
 		$this->enabled = (bool)$cfg['enabled'];
 		$this->isCompress = (bool)$cfg['compress'];
@@ -95,7 +97,8 @@ abstract class ACache {
 	 * @param string $dir
 	 * @return \wf\cache\ACache
 	 */
-	public function setCacheDir($dir){
+	public function setCacheDir($dir)
+	{
 		$this->cacheDir = rtrim($dir, '/');
 	
 		if(!is_dir($this->cacheDir)) {
@@ -111,7 +114,8 @@ abstract class ACache {
 	 * @param int $expire
 	 * @return \wf\cache\ACache
 	 */
-	public function setExpire($expire) {
+	public function setExpire($expire) 
+	{
 		$this->expire = (int) $expire;
 		return $this;
 	}
@@ -123,7 +127,8 @@ abstract class ACache {
 	 * @param string $key 缓存下标
 	 * @return \wf\cache\ACache
 	 */
-	protected function checkLock($key) {
+	protected function checkLock($key) 
+	{
 		if ($this->isLocked($key)) {
 			$tries = 16;
 			$count = 0;

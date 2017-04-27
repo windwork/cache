@@ -1,11 +1,12 @@
 <?php
 require_once '../lib/ACache.php';
-require_once '../lib/adapter/Memcache.php';
+require_once '../lib/strategy/Memcache.php';
 
 /**
  * File test case.
  */
-class MemcacheTest extends PHPUnit_Framework_TestCase {
+class MemcacheTest extends PHPUnit_Framework_TestCase 
+{
 	
 	/**
 	 *
@@ -16,7 +17,8 @@ class MemcacheTest extends PHPUnit_Framework_TestCase {
 	/**
 	 * Prepares the environment before running a test.
 	 */
-	protected function setUp() {
+	protected function setUp() 
+	{
 		parent::setUp ();
 		$cfg = array(
 			// 缓存设置
@@ -24,7 +26,7 @@ class MemcacheTest extends PHPUnit_Framework_TestCase {
 		    'dir'               => 'data/cache',   // 缓存文件夹，如果使用缓存服务器，设置通过wrapper访问，如：radius://localhost:1812/data/cache
 		    'expire'            => 3600,               // 缓存更新周期(默认：3600s)
 			'compress'          => 0,                  // 是否启用缓存内容压缩后存贮
-		    'adapter'           => 'Memcache',
+		    'class'             => '',
 		    'memcache' => [
     		    'host'        => '127.0.0.1',              //
     		    'port'        => 11211,           //
@@ -33,27 +35,30 @@ class MemcacheTest extends PHPUnit_Framework_TestCase {
 		    ],
 		);
 
-		$this->cache = new \wf\cache\adapter\Memcache($cfg);
+		$this->cache = new \wf\cache\strategy\Memcache($cfg);
 	}
 	
 	/**
 	 * Cleans up the environment after running a test.
 	 */
-	protected function tearDown() {
+	protected function tearDown() 
+	{
 		parent::tearDown ();
 	}
 	
 	/**
 	 * Constructs the test case.
 	 */
-	public function __construct() {
+	public function __construct() 
+	{
 	}
 	
 	/**
 	 * Tests File->write()
 	 * Tests File->read()
 	 */
-	public function testReadWrite() {
+	public function testReadWrite() 
+	{
 		$cacheKey = 'unit_test/key-read-write';
 		$value = 'test value';
 		// write, expire in 2 second
@@ -89,7 +94,8 @@ class MemcacheTest extends PHPUnit_Framework_TestCase {
 	 * Tests File->write()
 	 * Tests File->read()
 	 */
-	public function testDelete() {
+	public function testDelete() 
+	{
 		$cacheKey = 'unit_test/key-read-write';
 		$value = 'test value';
 		
@@ -102,7 +108,8 @@ class MemcacheTest extends PHPUnit_Framework_TestCase {
 		
 	}	
 	
-	public function testClear() {
+	public function testClear() 
+	{
 		$cacheKey = 'unit_test/key-read-write';
 		$value = 'test value';
 		

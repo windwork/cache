@@ -16,7 +16,7 @@ $cfg = [
     'dir'        => 'data/cache',  // 缓存文件夹，如果使用缓存服务器，则是缓存变量的前缀
     'expire'     => 3600,          // 缓存更新周期(默认：3600s)
     'compress'   => 0,             // 是否启用缓存内容压缩后存贮
-    'class'    => '\\wf\\cache\\adapter\\File',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
+    'class'    => '\\wf\\cache\\strategy\\File',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
 ];
 $cache = new $cfg['class']($cfg);
 
@@ -54,7 +54,7 @@ $cfg = [
 	'dir'        => 'data/cache',  // 缓存文件夹，如果使用缓存服务器，则是缓存变量的前缀
 	'expire'     => 3600,          // 缓存更新周期(默认：3600s)
 	'compress'   => 0,             // 是否启用缓存内容压缩后存贮
-	'class'    => '\\wf\\cache\\adapter\\Memcache',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
+	'class'    => '\\wf\\cache\\strategy\\Memcache',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
 
     ['memcache'] => [
         'host'        => '127.0.0.1',     //
@@ -71,7 +71,7 @@ $cfg = [
     'dir'        => 'data/cache',  // 缓存文件夹，如果使用缓存服务器，则是缓存变量的前缀
     'expire'     => 3600,          // 缓存更新周期(默认：3600s)
     'compress'   => 0,             // 是否启用缓存内容压缩后存贮
-    'class'      => '\\wf\\cache\\adapter\\Memcached',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
+    'class'      => '\\wf\\cache\\strategy\\Memcached',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
 
     ['memcached'] => [
         'host'        => '127.0.0.1',     //
@@ -98,7 +98,7 @@ $cfg = [
 	'dir'        => 'data/cache',  // 缓存文件夹，如果使用缓存服务器，则是缓存变量的前缀
 	'expire'     => 3600,          // 缓存更新周期(默认：3600s)
 	'compress'   => 0,             // 是否启用缓存内容压缩后存贮
-	'class'      => '\\wf\\cache\\adapter\\Redis',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Redis）使用Redis缓存
+	'class'      => '\\wf\\cache\\strategy\\Redis',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Redis）使用Redis缓存
     
     'redis' => [
         'host'           => '127.0.0.1',     //
@@ -124,7 +124,7 @@ return [
     // 缓存组件设置
     'cache' => [
         'enabled'          => 1,                   // 是否启用缓存
-        'class'            => '\\wf\\cache\\adapter\\File',              // 缓存模式，File|Memcache|Memcached|Redis
+        'class'            => '\\wf\\cache\\strategy\\File',              // 缓存模式，File|Memcache|Memcached|Redis
         'dir'              => dirname(__DIR__) . '/data/cache',        // 缓存文件夹
         'expire'           => 7200,                // 缓存更新周期(默认：7200s)
         'compress'         => 0,                   // 是否启用缓存内容压缩后存贮（建议只在虚拟主机中使用文件缓存时启用，以便省出存储空间）

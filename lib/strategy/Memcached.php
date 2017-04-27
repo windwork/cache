@@ -4,10 +4,10 @@
  * 
  * 一个开源的PHP轻量级高效Web开发框架
  * 
- * @copyright   Copyright (c) 2008-2016 Windwork Team. (http://www.windwork.org)
+ * @copyright   Copyright (c) 2008-2017 Windwork Team. (http://www.windwork.org)
  * @license     http://opensource.org/licenses/MIT	MIT License
  */
-namespace wf\cache\adapter;
+namespace wf\cache\strategy;
 
 use \wf\cache\Exception;
 use wf\cache\ACache;
@@ -15,12 +15,13 @@ use wf\cache\ACache;
 /**
  * Memcached缓存操作实现类，需要安装Memcached扩展
  * 
- * @package     wf.cache.adapter
+ * @package     wf.cache.strategy
  * @author      cm <cmpan@qq.com>
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Memcached extends \wf\cache\ACache {
+class Memcached extends \wf\cache\ACache 
+{
 	/**
 	 * 
 	 * @var \Memcached
@@ -31,7 +32,8 @@ class Memcached extends \wf\cache\ACache {
 	 * 
 	 * @param array $cfg
 	 */
-	public function __construct(array $cfg) {
+	public function __construct(array $cfg) 
+	{
 		parent::__construct($cfg);
 		
 		if (!$cfg['enabled']) {
@@ -60,7 +62,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return \wf\cache\ACache
 	 */
-	protected function lock($key) {
+	protected function lock($key) 
+	{
 		$cachePath = $this->getCachePath($key);
 
 		// 设定缓存锁文件的访问和修改时间
@@ -76,7 +79,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return bool
 	 */
-	protected function isLocked($key) {
+	protected function isLocked($key) 
+	{
 		$cachePath = $this->getCachePath($key);
 		return $this->obj->get($cachePath . '.lock');
 	}
@@ -87,7 +91,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return string
 	 */
-	private function getCachePath($key) {
+	private function getCachePath($key) 
+	{
 		$path = $this->cacheDir . "/{$key}";
 		$path = preg_replace('/[^a-z0-9_\\/]/is', '', $path);
 		return $path;
@@ -100,7 +105,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param mixed $value
 	 * @param int $expire = null 单位（s），不能超过30天， 默认使用配置中的过期设置， 如果要设置不删除缓存，请设置一个大点的整数
 	 */
-	public function write($key, $value, $expire = null) {
+	public function write($key, $value, $expire = null) 
+	{
 		if (!$this->enabled) {
 			return ;
 		}
@@ -132,7 +138,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return mixed
 	 */
-	public function read($key) {
+	public function read($key) 
+	{
 		if (!$this->enabled) {
 			return null;
 		}
@@ -157,7 +164,8 @@ class Memcached extends \wf\cache\ACache {
 	 *
 	 * @param string $key
 	 */
-	public function delete($key) {
+	public function delete($key) 
+	{
 		if(empty($key)) {
 			return false;
 		}
@@ -178,7 +186,8 @@ class Memcached extends \wf\cache\ACache {
 	 *
 	 * @param string $dir = '' 该参数对于memcache扩展无效
 	 */
-	public function clear($dir = '') {
+	public function clear($dir = '') 
+	{
 		$this->obj->flush();
 	
 		$this->execTimes ++;
@@ -190,7 +199,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param string $key
 	 * @return \wf\cache\File
 	 */
-	protected function unlock($key) {
+	protected function unlock($key) 
+	{
 		$cachePath = $this->getCachePath($key);
 		$this->obj->delete($cachePath . '.lock');
 		
@@ -202,7 +212,8 @@ class Memcached extends \wf\cache\ACache {
 	 * @param string $dir
 	 * @return \wf\cache\ACache
 	 */
-	public function setCacheDir($dir){
+	public function setCacheDir($dir)
+	{
 		$this->cacheDir = trim($dir, '/');
 			
 		return $this;
