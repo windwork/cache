@@ -9,9 +9,6 @@
  */
 namespace wf\cache\strategy;
 
-use \wf\cache\Exception;
-use wf\cache\ACache;
-
 /**
  * Memcache缓存操作实现类
  * 需要安装Memcache扩展
@@ -129,7 +126,7 @@ class Memcache extends \wf\cache\ACache
             $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
             $set = $this->obj->set($cachePath, $value, $flag, $expire);
             $this->unlock($key);
-        } catch (Exception $e) {
+        } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
             throw $e;
         }
