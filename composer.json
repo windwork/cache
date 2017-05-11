@@ -1,18 +1,18 @@
 {
   "name" : "windwork/cache",
-  "type": "library",
   "description" : "Windwork cache component",
-  "keywords": ["cache","caching","performance","memcache","memcached","redis"],
-  "version" : "1.0.0-beta2",
+  "version" : "1.0.0",
   "require" : {
     "php" : ">=5.5.0"
   },
   "license" : "MIT",
+  "keywords" : [ "cache", "caching", "performance", "memcache", "memcached", "redis" ],
   "autoload" : {
     "psr-4" : {
       "wf\\cache\\" : "lib"
     }
   },
+  "type" : "library",
   "authors" : [ {
     "name" : "Windwork Community",
     "homepage" : "http://windwork.org"
