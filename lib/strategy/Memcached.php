@@ -9,9 +9,6 @@
  */
 namespace wf\cache\strategy;
 
-use \wf\cache\Exception;
-use wf\cache\ACache;
-
 /**
  * Memcached缓存操作实现类，需要安装Memcached扩展
  * 
@@ -126,7 +123,7 @@ class Memcached extends \wf\cache\ACache
             $cachePath = $this->getCachePath($key);
             $set = $this->obj->set($cachePath, $value, $expire);
             $this->unlock($key);
-        } catch (Exception $e) {
+        } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
             throw $e;
         }

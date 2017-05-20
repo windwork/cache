@@ -9,9 +9,6 @@
  */
 namespace wf\cache\strategy;
 
-use \wf\cache\Exception;
-use wf\cache\ACache;
-
 /**
  * Redis 缓存操作实现类
  * 
@@ -134,7 +131,7 @@ class Redis extends \wf\cache\ACache
             $set = $this->obj->set($cachePath, $value);
             $this->obj->setTimeout($cachePath, $expire);
             $this->unlock($key);
-        } catch (Exception $e) {
+        } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
             throw $e;
         }

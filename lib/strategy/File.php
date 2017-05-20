@@ -9,8 +9,6 @@
  */
 namespace wf\cache\strategy;
 
-use \wf\cache\Exception;
-
 /**
  * 文件缓存操作实现类
  * 
@@ -36,7 +34,7 @@ class File extends \wf\cache\ACache
         if(!is_dir($cacheDir)) {
             if(!@mkdir($cacheDir, 0755, true)) {
                 if(!is_dir($cacheDir)) {
-                    throw new Exception("Could not make cache directory");
+                    throw new \wf\cache\Exception("Could not make cache directory");
                 }
             }
         }
@@ -103,7 +101,7 @@ class File extends \wf\cache\ACache
         try {
             $this->store($key, $data);
             $this->unlock($key);
-        } catch (Exception $e) {
+        } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
             throw $e;
         }
@@ -217,7 +215,7 @@ class File extends \wf\cache\ACache
         $cacheDir  = dirname($cachePath);
     
         if(!is_dir($cacheDir) && !@mkdir($cacheDir, 0755, true)) {
-            throw new Exception("Could not make cache directory");
+            throw new \wf\cache\Exception("Could not make cache directory");
         }
     
         $value = serialize($value);
