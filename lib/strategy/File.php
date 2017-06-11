@@ -12,6 +12,9 @@ namespace wf\cache\strategy;
 /**
  * 文件缓存操作实现类
  * 
+ * 实现逻辑：通过var_dump把变量保存到文件，读取缓存时再包含文件。
+ * （旧版通过变量系列化保存到文件再读取，新版本PHP默认开启opcache通过包含文件性能更高。）
+ * 
  * @package     wf.cache.strategy
  * @author      cm <cmpan@qq.com>
  * @link        http://docs.windwork.org/manual/wf.cache.html
@@ -19,7 +22,11 @@ namespace wf\cache\strategy;
  */
 class File extends \wf\cache\ACache 
 {
-    const CACHE_SUMMARY = "<?php\n/**\n * Auto generate by windwork cache engine,please don't edit me.\n */\nexit;\n?>";
+    /**
+     * 已读取缓存内容
+     * @var array
+     */
+    protected $temp = [];
     
     /**
      * 锁定
@@ -31,15 +38,10 @@ class File extends \wf\cache\ACache
     {
         $cachePath = $this->getCachePath($key);
         $cacheDir  = dirname($cachePath);
-        if(!is_dir($cacheDir)) {
-            if(!@mkdir($cacheDir, 0755, true)) {
-                if(!is_dir($cacheDir)) {
-                    throw new \wf\cache\Exception("Could not make cache directory");
-                }
-            }
+        if(!is_dir($cacheDir) && !@mkdir($cacheDir, 0755, true)) {
+            throw new \wf\cache\Exception("Could not make cache directory");
         }
-
-        // 设定缓存锁文件的访问和修改时间
+        
         @touch($cachePath . '.lock');
         
         return $this;
@@ -77,7 +79,7 @@ class File extends \wf\cache\ACache
      *
      * @param string $key
      * @param mixed $value
-     * @param int $expire = null  如果要设置不删除缓存，请设置一个大点的整数
+     * @param int $expire = null  过期时间，请设置一个大点的整数
      */
     public function write($key, $value, $expire = null) 
     {
@@ -94,12 +96,18 @@ class File extends \wf\cache\ACache
         
         $this->checkLock($key);
     
-        $data = array('time' => time(), 'expire' => $expire, 'valid' => true, 'data' => $value);
+        $data = [
+            'time'   => time(), 
+            'expire' => time() + $expire,
+            'value'  => $value,            
+        ];
         
         $this->lock($key);
     
         try {
-            $this->store($key, $data);
+            if($this->store($key, $data)) {
+                $this->temp[$key] = $data;
+            }
             $this->unlock($key);
         } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
@@ -122,27 +130,33 @@ class File extends \wf\cache\ACache
         $this->execTimes ++;
         $this->readTimes ++;
         
+        // 从已读取缓存中读取未过期缓存
+        if (!empty($this->temp[$key]) && (time() < $this->temp[$key]['expire'])) {
+            return $this->temp[$key]['value'];
+        }
+        
         $this->checkLock($key);
         
+        $isAvailable = false;
         $cachePath = $this->getCachePath($key);
-        if (is_file($cachePath) && is_readable($cachePath)) {
-            $data = substr(file_get_contents($cachePath), strlen(static::CACHE_SUMMARY));
+        if (is_file($cachePath)) {
+            $data = include $cachePath;
             
-            if ($data) {
-                $this->readSize += strlen($data)/1024;
-    
-                if($this->isCompress && function_exists('gzdeflate') && function_exists('gzinflate')) {
-                    $data = gzinflate($data);
-                }
-    
-                $data = unserialize($data);
-                 
-                $data['isExpired'] = ($data['expire'] && (time() - $data['time']) > $data['expire']) ? true : false;                
+            if (time() < $data['expire']) {                
+                $isAvailable = true;
             }
         }
              
-        if (!empty($data) && ($data['valid'] && !$data['isExpired'])) {
-            return $data['data'];
+        if ($isAvailable) {
+            // 
+            if($this->isCompress && function_exists('gzdeflate') && function_exists('gzinflate')) {
+                $data['value'] = gzinflate($data['value']);
+            }
+
+            $this->readSize += strlen(var_export($data['value'], true))/1024;
+            $this->temp[$key] = $data;
+            
+            return $data['value'];
         }
     
         return null;
@@ -159,8 +173,9 @@ class File extends \wf\cache\ACache
             return false;
         }
     
-        $this->execTimes ++;
-    
+        $this->execTimes ++;    
+        unset($this->temp[$key]);
+        
         $file = $this->getCachePath($key);
         if(is_file($file)) {
             $this->checkLock($key);
@@ -178,10 +193,11 @@ class File extends \wf\cache\ACache
      */
     public function clear($dir = '') 
     {
-        $dir = $this->getCachePath($dir);
-        $dir = dirname($dir);
+        $path = $this->getCachePath($dir . '/tmp');
+        $dir  = dirname($path);
         
         is_dir($dir) && static::clearDir($dir, false);
+        $this->temp = [];
     
         $this->execTimes ++;
     }
@@ -203,13 +219,12 @@ class File extends \wf\cache\ACache
     
     /**
      * 缓存变量
-     * 为防止信息泄露，缓存文件格式为php文件，并以"<?php exit;?>"开头
      *
      * @param string $key 缓存变量下标
-     * @param string $value 缓存变量的值
+     * @param string $data 缓存信息
      * @return bool
      */
-    private function store($key, $value) 
+    private function store($key, $data) 
     {
         $cachePath = $this->getCachePath($key);
         $cacheDir  = dirname($cachePath);
@@ -217,16 +232,15 @@ class File extends \wf\cache\ACache
         if(!is_dir($cacheDir) && !@mkdir($cacheDir, 0755, true)) {
             throw new \wf\cache\Exception("Could not make cache directory");
         }
-    
-        $value = serialize($value);
-    
+            
         if($this->isCompress && function_exists('gzdeflate') && function_exists('gzinflate')) {
-            $value = gzdeflate($value);
+            $data['value'] = gzdeflate($data['value']);
         }
     
-        $this->writeSize += strlen($value)/1024;
+        $this->writeSize += strlen(var_export($data['value'], true))/1024;
         
-        return @file_put_contents($cachePath, static::CACHE_SUMMARY. $value);
+        $text = "<?php\n/**\n * Auto generate by windwork cache engine,\nplease don't edit me.\n */\nreturn " . var_export($data, true) . ';';        
+        return @file_put_contents($cachePath, $text);
     }
 
     /**
@@ -238,11 +252,11 @@ class File extends \wf\cache\ACache
      */
     private static function clearDir($dir, $rmSelf = false) 
     {
-        $dir = rtrim($dir, '/');
+        $dir = rtrim($dir, '\\/');
         
         // 不处理非法路径
         $dir = static::safePath($dir);
-        $dir = rtrim($dir, '/') . '/';
+        $dir = rtrim($dir, '\\/') . '/';
         
         if(!$dir || !$d = dir($dir)) {
             return;

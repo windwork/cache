@@ -37,6 +37,7 @@ class FileTest extends PHPUnit_Framework_TestCase
      */
     protected function tearDown() 
     {
+        $this->cache->clear();
         parent::tearDown ();
     }
     
