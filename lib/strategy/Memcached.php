@@ -17,7 +17,7 @@ namespace wf\cache\strategy;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Memcached extends \wf\cache\ACache 
+class Memcached extends \wf\cache\CacheAbstract 
 {
     /**
      * 
@@ -57,7 +57,7 @@ class Memcached extends \wf\cache\ACache
      * 锁定
      *
      * @param string $key
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     protected function lock($key) 
     {
@@ -207,7 +207,7 @@ class Memcached extends \wf\cache\ACache
     /**
      * 设置缓存目录
      * @param string $dir
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function setCacheDir($dir)
     {

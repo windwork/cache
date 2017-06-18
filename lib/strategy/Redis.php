@@ -19,7 +19,7 @@ namespace wf\cache\strategy;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Redis extends \wf\cache\ACache 
+class Redis extends \wf\cache\CacheAbstract 
 {
     /**
      * 
@@ -214,7 +214,7 @@ class Redis extends \wf\cache\ACache
     /**
      * 设置缓存目录
      * @param string $dir
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function setCacheDir($dir)
     {

@@ -1,5 +1,5 @@
 <?php
-require_once '../lib/ACache.php';
+require_once '../lib/CacheAbstract.php';
 require_once '../lib/strategy/File.php';
 
 /**
@@ -10,7 +10,7 @@ class FileTest extends PHPUnit_Framework_TestCase
     
     /**
      *
-     * @var \wf\cache\ACache
+     * @var \wf\cache\CacheAbstract
      */
     private $cache;
     

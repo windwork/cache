@@ -18,7 +18,7 @@ namespace wf\cache\strategy;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Memcache extends \wf\cache\ACache 
+class Memcache extends \wf\cache\CacheAbstract 
 {
     /**
      * 
@@ -58,7 +58,7 @@ class Memcache extends \wf\cache\ACache
      * 锁定
      *
      * @param string $key
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     protected function lock($key) 
     {
@@ -102,7 +102,7 @@ class Memcache extends \wf\cache\ACache
      * @param string $key
      * @param mixed $value
      * @param int $expire = null 单位（s），不能超过30天， 默认使用配置中的过期设置， 如果要设置不删除缓存，请设置一个大点的整数
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function write($key, $value, $expire = null) 
     {
@@ -164,7 +164,7 @@ class Memcache extends \wf\cache\ACache
      * 删除缓存
      *
      * @param string $key
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function delete($key) 
     {
@@ -187,7 +187,7 @@ class Memcache extends \wf\cache\ACache
      * 清空指定目录下所有缓存
      *
      * @param string $dir = '' 该参数对于memcache扩展无效
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function clear($dir = '') 
     {
@@ -200,7 +200,7 @@ class Memcache extends \wf\cache\ACache
      * 解锁
      *
      * @param string $key
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     protected function unlock($key) 
     {
@@ -213,7 +213,7 @@ class Memcache extends \wf\cache\ACache
     /**
      * 设置缓存目录
      * @param string $dir
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function setCacheDir($dir)
     {

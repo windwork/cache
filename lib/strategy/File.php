@@ -20,7 +20,7 @@ namespace wf\cache\strategy;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class File extends \wf\cache\ACache 
+class File extends \wf\cache\CacheAbstract 
 {
     /**
      * 已读取缓存内容
@@ -32,7 +32,7 @@ class File extends \wf\cache\ACache
      * 锁定
      *
      * @param string $key
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     protected function lock($key) 
     {
@@ -189,7 +189,7 @@ class File extends \wf\cache\ACache
      * 清空指定目录下所有缓存
      *
      * @param string $dir = ''
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     public function clear($dir = '') 
     {
@@ -206,7 +206,7 @@ class File extends \wf\cache\ACache
      * 解锁
      *
      * @param string $key
-     * @return \wf\cache\ACache
+     * @return \wf\cache\CacheAbstract
      */
     protected function unlock($key) 
     {
