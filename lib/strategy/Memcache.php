@@ -18,7 +18,7 @@ namespace wf\cache\strategy;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Memcache extends \wf\cache\CacheAbstract 
+class Memcache extends \wf\cache\CacheAbstract
 {
     /**
      * 
@@ -55,6 +55,17 @@ class Memcache extends \wf\cache\CacheAbstract
     }
     
     /**
+     * 获取缓存锁路径
+     * @param string $key
+     * @return string
+     */
+    private function lockPath($key) {
+        $lockPath = $this->getCachePath('cache_lock.' . $key);
+        
+        return $lockPath;
+    }
+    
+    /**
      * 锁定
      *
      * @param string $key
@@ -62,10 +73,8 @@ class Memcache extends \wf\cache\CacheAbstract
      */
     protected function lock($key) 
     {
-        $cachePath = $this->getCachePath($key);
-
         // 设定缓存锁文件的访问和修改时间
-        $this->obj->set($cachePath . '.lock', 1);
+        $this->obj->set($this->lockPath($key), 'cache_lock');
         
         return $this;
     }
@@ -79,21 +88,7 @@ class Memcache extends \wf\cache\CacheAbstract
      */
     protected function isLocked($key) 
     {
-        $cachePath = $this->getCachePath($key);
-        return $this->obj->get($cachePath . '.lock');
-    }
-            
-    /**
-     * 获取缓存文件
-     *
-     * @param string $key
-     * @return string
-     */
-    private function getCachePath($key) 
-    {
-        $path = $this->cacheDir . "/{$key}";
-        $path = preg_replace('/[^a-z0-9_\\/]/is', '', $path);
-        return $path;
+        return $this->obj->get($this->lockPath($key));
     }
         
     /**
@@ -113,17 +108,19 @@ class Memcache extends \wf\cache\CacheAbstract
         if ($expire === null) {
             $expire = $this->expire;
         }
-    
-        $this->execTimes ++;
-        $this->writeTimes ++;
         
-        $this->checkLock($key);
+        $cachePath = $this->getCachePath($key);
+        $value = serialize($value);
         
-        $this->lock($key);
-    
+        $this->stats['execTimes'] ++;
+        $this->stats['writeTimes'] ++;
+        $this->stats['writeSize'] += strlen($value)/1024;
+            
         try {
-            $cachePath = $this->getCachePath($key);
             $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
+            
+            $this->waitUnlock($key);
+            $this->lock($key);
             $set = $this->obj->set($cachePath, $value, $flag, $expire);
             $this->unlock($key);
         } catch (\wf\cache\Exception $e) {
@@ -144,16 +141,19 @@ class Memcache extends \wf\cache\CacheAbstract
             return null;
         }
         
-        $this->execTimes ++;
-        $this->readTimes ++;
+        $this->stats['execTimes'] ++;
+        $this->stats['readTimes'] ++;
         
-        $this->checkLock($key);
         
         $cachePath = $this->getCachePath($key);
         $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
+        
+        $this->waitUnlock($key);
         $data = $this->obj->get($cachePath, $flag);
         
         if (false !== $data) {
+            $this->stats['readSize'] += strlen($data)/1024;
+            $data = unserialize($data);
             return $data;
         }
     
@@ -172,14 +172,12 @@ class Memcache extends \wf\cache\CacheAbstract
             return false;
         }
     
-        $this->execTimes ++;
-        
-        $this->checkLock($key);
-        $this->lock($key);
-
+        $this->stats['execTimes'] ++;        
         $path = $this->getCachePath($key);
-        $this->obj->delete($path);
         
+        $this->waitUnlock($key);
+        $this->lock($key);
+        $this->obj->delete($path);        
         $this->unlock($key);
     }
     
@@ -193,7 +191,7 @@ class Memcache extends \wf\cache\CacheAbstract
     {
         $this->obj->flush();
     
-        $this->execTimes ++;
+        $this->stats['execTimes'] ++;
     }
     
     /**
@@ -204,21 +202,8 @@ class Memcache extends \wf\cache\CacheAbstract
      */
     protected function unlock($key) 
     {
-        $cachePath = $this->getCachePath($key);
-        $this->obj->delete($cachePath . '.lock');
+        $this->obj->delete($this->lockPath($key));
         
-        return $this;
-    }
-    
-    /**
-     * 设置缓存目录
-     * @param string $dir
-     * @return \wf\cache\CacheAbstract
-     */
-    public function setCacheDir($dir)
-    {
-        $this->cacheDir = trim($dir, '/');
-            
         return $this;
     }
     

@@ -1,4 +1,5 @@
 <?php
+require_once '../lib/CacheInterface.php';
 require_once '../lib/CacheAbstract.php';
 require_once '../lib/strategy/File.php';
 

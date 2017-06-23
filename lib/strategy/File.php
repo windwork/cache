@@ -20,13 +20,25 @@ namespace wf\cache\strategy;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class File extends \wf\cache\CacheAbstract 
+class File extends \wf\cache\CacheAbstract
 {
     /**
-     * 已读取缓存内容
+     * 已读取缓存内容，下次读取直接从缓存中读
      * @var array
      */
     protected $temp = [];
+    
+    /**
+     * 获取缓存锁路径
+     * @param string $key
+     * @return string
+     */
+    private function lockPath($key) {
+        // 锁放在缓存第一级文件夹，方便监测
+        $lockPath = $this->getCachePath(strtr($key, '/', '^')) . '.lock';
+        
+        return $lockPath;
+    }
     
     /**
      * 锁定
@@ -34,19 +46,12 @@ class File extends \wf\cache\CacheAbstract
      * @param string $key
      * @return \wf\cache\CacheAbstract
      */
-    protected function lock($key) 
-    {
-        $cachePath = $this->getCachePath($key);
-        $cacheDir  = dirname($cachePath);
-        if(!is_dir($cacheDir) && !@mkdir($cacheDir, 0755, true)) {
-            throw new \wf\cache\Exception("Could not make cache directory");
-        }
-        
-        @touch($cachePath . '.lock');
+    protected function lock($key)
+    { 
+        @touch($this->lockPath($key));
         
         return $this;
-    }
-  
+    }    
     
     /**
      * 缓存单元是否已经锁定
@@ -54,26 +59,26 @@ class File extends \wf\cache\CacheAbstract
      * @param string $key
      * @return bool
      */
-    protected function isLocked($key) 
+    protected function isLocked($key)
     {
-        $cachePath = $this->getCachePath($key);
         clearstatcache();
-        return is_file($cachePath . '.lock');
+        return is_file($this->lockPath($key));
     }
-            
+    
+    
     /**
-     * 获取缓存文件
+     * 解锁
      *
      * @param string $key
-     * @return string
+     * @return \wf\cache\CacheAbstract
      */
-    private function getCachePath($key) 
+    protected function unlock($key)
     {
-        $path = $this->cacheDir . "/{$key}.php";
-        $path = static::safePath($path);
-        return $path;
-    }
+        @unlink($this->lockPath($key));
         
+        return $this;
+    }
+       
     /**
      * 设置缓存
      *
@@ -90,24 +95,22 @@ class File extends \wf\cache\CacheAbstract
         if ($expire === null) {
             $expire = $this->expire;
         }
-    
-        $this->execTimes ++;
-        $this->writeTimes ++;
         
-        $this->checkLock($key);
-    
         $data = [
-            'time'   => time(), 
+            'time'   => time(),
             'expire' => time() + $expire,
-            'value'  => $value,            
+            'value'  => $value,
         ];
-        
-        $this->lock($key);
     
+        $this->stats['execTimes'] ++;
+        $this->stats['writeTimes'] ++;            
+        $this->stats['writeSize'] += strlen(var_export($value, true))/1024;
+        $this->temp[$key] = $data;
+        
         try {
-            if($this->store($key, $data)) {
-                $this->temp[$key] = $data;
-            }
+            $this->waitUnlock($key);
+            $this->lock($key);
+            $this->store($key, $data);
             $this->unlock($key);
         } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
@@ -127,18 +130,21 @@ class File extends \wf\cache\CacheAbstract
             return null;
         }
         
-        $this->execTimes ++;
-        $this->readTimes ++;
+        $this->stats['execTimes'] ++;
+        $this->stats['readTimes'] ++;
         
         // 从已读取缓存中读取未过期缓存
         if (!empty($this->temp[$key]) && (time() < $this->temp[$key]['expire'])) {
             return $this->temp[$key]['value'];
         }
         
-        $this->checkLock($key);
-        
+        // 缓存是否有效（存在并且未过期）
         $isAvailable = false;
+        
+        $this->waitUnlock($key);
+        
         $cachePath = $this->getCachePath($key);
+        clearstatcache();
         if (is_file($cachePath)) {
             $data = include $cachePath;
             
@@ -148,12 +154,12 @@ class File extends \wf\cache\CacheAbstract
         }
              
         if ($isAvailable) {
-            // 
+            // 如果压缩内容则解压
             if($this->isCompress && function_exists('gzdeflate') && function_exists('gzinflate')) {
                 $data['value'] = gzinflate($data['value']);
             }
-
-            $this->readSize += strlen(var_export($data['value'], true))/1024;
+            
+            $this->stats['readSize'] += strlen(var_export($data['value'], true))/1024;
             $this->temp[$key] = $data;
             
             return $data['value'];
@@ -169,16 +175,14 @@ class File extends \wf\cache\CacheAbstract
      */
     public function delete($key) 
     {
-        if(empty($key)) {
-            return false;
-        }
-    
-        $this->execTimes ++;    
+        $this->stats['execTimes'] ++;
         unset($this->temp[$key]);
         
         $file = $this->getCachePath($key);
+        
+        clearstatcache();
         if(is_file($file)) {
-            $this->checkLock($key);
+            $this->waitUnlock($key);
             $this->lock($key);
             @unlink($file);
             $this->unlock($key);
@@ -196,27 +200,14 @@ class File extends \wf\cache\CacheAbstract
         $path = $this->getCachePath($dir . '/tmp');
         $dir  = dirname($path);
         
-        is_dir($dir) && static::clearDir($dir, false);
-        $this->temp = [];
-    
-        $this->execTimes ++;
-    }
-    
-    /**
-     * 解锁
-     *
-     * @param string $key
-     * @return \wf\cache\CacheAbstract
-     */
-    protected function unlock($key) 
-    {
-        $cachePath = $this->getCachePath($key);
-        @unlink($cachePath . '.lock');
+        if(is_dir($dir)) {
+            static::clearDir($dir, false);
+        }
         
-        return $this;
+        $this->temp = [];
+        $this->stats['execTimes'] ++;
     }
-    
-    
+        
     /**
      * 缓存变量
      *
@@ -236,8 +227,6 @@ class File extends \wf\cache\CacheAbstract
         if($this->isCompress && function_exists('gzdeflate') && function_exists('gzinflate')) {
             $data['value'] = gzdeflate($data['value']);
         }
-    
-        $this->writeSize += strlen(var_export($data['value'], true))/1024;
         
         $text = "<?php\n/**\n * Auto generate by windwork cache engine,\nplease don't edit me.\n */\nreturn " . var_export($data, true) . ';';        
         return @file_put_contents($cachePath, $text);
@@ -252,10 +241,6 @@ class File extends \wf\cache\CacheAbstract
      */
     private static function clearDir($dir, $rmSelf = false) 
     {
-        $dir = rtrim($dir, '\\/');
-        
-        // 不处理非法路径
-        $dir = static::safePath($dir);
         $dir = rtrim($dir, '\\/') . '/';
         
         if(!$dir || !$d = dir($dir)) {
@@ -280,19 +265,6 @@ class File extends \wf\cache\CacheAbstract
         $rmSelf && @rmdir($dir);
         
         return $do;
-    }
-    /**
-     * 文件安全路径
-     * 过滤掉文件路径中非法的字符
-     * @param string $path
-     * @return string
-     */
-    private static function safePath($path) 
-    {
-        $path = str_replace('\\', '/', $path);
-        $path = preg_replace('/(\.+\\/)/', './', $path);
-        $path = preg_replace('/(\\/+)/', '/', $path);
-        return $path;
     }
 }
 

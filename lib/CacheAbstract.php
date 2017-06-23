@@ -19,37 +19,19 @@ namespace wf\cache;
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-abstract class CacheAbstract 
-{
+abstract class CacheAbstract implements CacheInterface
+{    
     /**
-     * 缓存读取次数
-     * @var int
+     * 缓存统计信息
+     * @var array
      */
-    public $readTimes  = 0;
-    
-    /**
-     * 缓存写入次数
-     * @var int
-     */
-    public $writeTimes = 0;
-    
-    /**
-     * 缓存读写总次数
-     * @var int
-     */
-    public $execTimes  = 0;
-    
-    /**
-     * 当前请求读取缓存内容的总大小(k)
-     * @var float
-     */
-    public $readSize   = 0;
-
-    /**
-     * 当前请求写入取缓存内容的总大小(k)
-     * @var float
-     */
-    public $writeSize  = 0;
+    protected $stats = [
+        'readTimes'  => 0,
+        'writeTimes' => 0,
+        'execTimes'  => 0,
+        'readSize'   => 0,
+        'writeSize'  => 0,
+    ];
     
     /**
      * 是否启用缓存
@@ -101,57 +83,6 @@ abstract class CacheAbstract
     }
     
     /**
-     * 设置缓存目录
-     * @param string $dir
-     * @return \wf\cache\CacheAbstract
-     */
-    public function setCacheDir($dir)
-    {
-        $this->cacheDir = rtrim($dir, '/');
-    
-        if(!is_dir($this->cacheDir)) {
-            @mkdir($this->cacheDir, 0755, true);
-        }
-        
-        return $this;
-    }
-
-    /**
-     * 设置缓存默认过期时间（s）
-     *
-     * @param int $expire
-     * @return \wf\cache\CacheAbstract
-     */
-    public function setExpire($expire) 
-    {
-        $this->expire = (int) $expire;
-        return $this;
-    }
-
-    /**
-     * 确保不是锁定状态
-     * 最多做$tries次睡眠等待解锁，超时则跳过并解锁
-     *
-     * @param string $key 缓存下标
-     * @return \wf\cache\CacheAbstract
-     */
-    protected function checkLock($key) 
-    {
-        if ($this->isLocked($key)) {
-            $tries = 16;
-            $count = 0;
-            do {
-                usleep(100);
-                $count ++;
-            } while ($count <= $tries && $this->isLocked($key));  // 最多做$tries次睡眠等待解锁，超时则跳过并解锁
-        
-            $this->isLocked($key) && $this->unlock($key);        
-        }
-        
-        return $this;
-    }
-
-    /**
      * 设置缓存
      *
      * @param string $cacheKey
@@ -177,10 +108,90 @@ abstract class CacheAbstract
     
     /**
      * 清空指定目录下的所有缓存
-     * 
+     *
      * @param string $dir = ''
      */
     abstract public function clear($dir = '');
+    
+    /**
+     * 获取缓存操作统计信息
+     * <pre>
+     * [
+     *     'readTimes'  => 0, // 缓存读取次数
+     *     'writeTimes' => 0, // 缓存写入次数
+     *     'execTimes'  => 0, // 缓存读写总次数
+     *     'readSize'   => 0, // 当前请求读取缓存内容的总大小(k)
+     *     'writeSize'  => 0, // 当前请求写入取缓存内容的总大小(k)
+     * ]
+     * </pre>
+     */
+    public function getCacheStats()
+    {
+        return $this->stats;
+    }
+        
+    /**
+     * 设置缓存目录
+     * @param string $dir
+     * @return \wf\cache\CacheAbstract
+     */
+    public function setCacheDir($dir)
+    {
+        $this->cacheDir = rtrim($dir, '/');
+        
+        return $this;
+    }
+    
+    /**
+     * 获取缓存文件
+     *
+     * @param string $key
+     * @return string
+     */
+    protected function getCachePath($key)
+    {
+        if(empty($key)) {
+            throw new \wf\cache\Exception("Invalid cache key: {$key}");
+        }
+        
+        $path = $this->cacheDir . '/'. $key;
+        
+        return $path;
+    }
+
+    /**
+     * 设置缓存默认过期时间（s）
+     *
+     * @param int $expire
+     * @return \wf\cache\CacheAbstract
+     */
+    public function setExpire($expire) 
+    {
+        $this->expire = (int) $expire;
+        return $this;
+    }
+
+    /**
+     * 等待解锁，检查确保不是锁定状态
+     * 最多做$tries次睡眠等待解锁，超时则跳过并解锁
+     *
+     * @param string $key 缓存下标
+     * @return \wf\cache\CacheAbstract
+     */
+    protected function waitUnlock($key) 
+    {
+        if ($this->isLocked($key)) {
+            $count = 0;
+            do {
+                usleep(100);
+                $count ++;
+            } while ($count < 10 && $this->isLocked($key));  // 最多做10次睡眠等待解锁，超时则跳过并解锁
+        
+            $this->isLocked($key) && $this->unlock($key);        
+        }
+        
+        return $this;
+    }
     
     /**
      * 缓存单元是否已经锁定
@@ -195,7 +206,7 @@ abstract class CacheAbstract
      *
      * @param string $key
      * @return \wf\cache\CacheAbstract
-    */
+     */
     abstract protected function lock($key);
     
     /**
@@ -203,7 +214,7 @@ abstract class CacheAbstract
      *
      * @param string $key
      * @return \wf\cache\CacheAbstract
-    */
+     */
     abstract protected function unlock($key);
 }
 
