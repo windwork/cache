@@ -2,6 +2,7 @@
 	"name" : "windwork/cache",
 	"description" : "Windwork cache component",
 	"version" : "1.1.0",
+	"time" : "2017-06-26 16:00:00",
 	"require" : {
 		"php" : ">=5.5.0"
 	},

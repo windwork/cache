@@ -81,38 +81,7 @@ abstract class CacheAbstract implements CacheInterface
         $this->setCacheDir($cfg['dir'])
              ->setExpire($cfg['expire']);
     }
-    
-    /**
-     * 设置缓存
-     *
-     * @param string $cacheKey
-     * @param mixed $value 类型为可系列化的标量或数组，不支持资源类型
-     * @param int $expire = null  单位秒，为null则使用配置文件中的缓存时间设置（3600秒），如果要设置不删除缓存，请设置一个大点的整数
-     */
-    abstract public function write($cacheKey, $value, $expire = null);
-    
-    /**
-     * 读取缓存
-     *
-     * @param string $cacheKey
-     * @return mixed 不存在的缓存返回 null
-     */
-    abstract public function read($cacheKey);
-    
-    /**
-     * 删除缓存
-     *
-     * @param string $cacheKey
-     */
-    abstract public function delete($cacheKey);
-    
-    /**
-     * 清空指定目录下的所有缓存
-     *
-     * @param string $dir = ''
-     */
-    abstract public function clear($dir = '');
-    
+        
     /**
      * 获取缓存操作统计信息
      * <pre>
