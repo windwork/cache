@@ -7,18 +7,19 @@
  * @copyright Copyright (c) 2008-2017 Windwork Team. (http://www.windwork.org)
  * @license   http://opensource.org/licenses/MIT
  */
-namespace wf\cache\strategy;
+namespace wf\cache\adapter;
 
 /**
- * Memcache缓存操作实现类
- * 需要安装Memcache扩展
+ * Redis 缓存操作实现类
  * 
- * @package     wf.cache.strategy
+ * 需要安装php扩展：https://github.com/phpredis/phpredis
+ * 
+ * @package     wf.cache.adapter
  * @author      cm <cmpan@qq.com>
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Memcache extends \wf\cache\CacheAbstract
+class Redis extends \wf\cache\CacheAbstract 
 {
     /**
      * 
@@ -29,6 +30,7 @@ class Memcache extends \wf\cache\CacheAbstract
     /**
      * 
      * @param array $cfg
+     * @throws \wf\cache\Exception
      */
     public function __construct(array $cfg) 
     {
@@ -38,15 +40,19 @@ class Memcache extends \wf\cache\CacheAbstract
             return;
         }
         
-        $mmcCfg = $cfg['memcache'];
+        $redisCfg = $cfg['redis'];
 
-        if(!empty($mmcCfg['host'])) {
-            $this->obj = new \Memcache();
+        if(!empty($redisCfg['host'])) {
+            $this->obj = new \Redis();
             
-            if($mmcCfg['pconnect']) {
-                $connect = @$this->obj->pconnect($mmcCfg['host'], $mmcCfg['port'], $mmcCfg['timeout']);
+            if($redisCfg['pconnect']) {
+                $connect = @$this->obj->pconnect($redisCfg['host'], $redisCfg['port'], $redisCfg['timeout']);
             } else {
-                $connect = @$this->obj->connect($mmcCfg['host'], $mmcCfg['port'], $mmcCfg['timeout']);
+                $connect = @$this->obj->connect($redisCfg['host'], $redisCfg['port'], $redisCfg['timeout']);
+            }
+            
+            if ($redisCfg['password'] && !$this->obj->auth($redisCfg['password'])) {
+                throw new \wf\cache\Exception('Redis密码不正确');
             }
             
             $this->enabled = $connect ? true : false;
@@ -69,12 +75,12 @@ class Memcache extends \wf\cache\CacheAbstract
      * 锁定
      *
      * @param string $key
-     * @return \wf\cache\CacheAbstract
+     * @return \wf\cache\File
      */
     protected function lock($key) 
     {
         // 设定缓存锁文件的访问和修改时间
-        $this->obj->set($this->lockPath($key), 'cache_lock');
+        $this->obj->set($this->lockPath($key), 1);
         
         return $this;
     }
@@ -96,8 +102,7 @@ class Memcache extends \wf\cache\CacheAbstract
      *
      * @param string $key
      * @param mixed $value
-     * @param int $expire = null 单位（s），不能超过30天， 默认使用配置中的过期设置， 如果要设置不删除缓存，请设置一个大点的整数
-     * @return \wf\cache\CacheAbstract
+     * @param int $expire = 0 单位（s），不能超过30天， 默认使用配置中的过期设置， 如果要设置不删除缓存，请设置一个大点的整数
      */
     public function write($key, $value, $expire = null) 
     {
@@ -109,19 +114,18 @@ class Memcache extends \wf\cache\CacheAbstract
             $expire = $this->expire;
         }
         
-        $cachePath = $this->getCachePath($key);
         $value = serialize($value);
+        $cachePath = $this->getCachePath($key);
         
         $this->stats['execTimes'] ++;
         $this->stats['writeTimes'] ++;
         $this->stats['writeSize'] += strlen($value)/1024;
             
-        try {
-            $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
-            
+        try {            
             $this->waitUnlock($key);
             $this->lock($key);
-            $set = $this->obj->set($cachePath, $value, $flag, $expire);
+            $set = $this->obj->set($cachePath, $value);
+            $this->obj->setTimeout($cachePath, $expire);
             $this->unlock($key);
         } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
@@ -144,12 +148,10 @@ class Memcache extends \wf\cache\CacheAbstract
         $this->stats['execTimes'] ++;
         $this->stats['readTimes'] ++;
         
-        
         $cachePath = $this->getCachePath($key);
-        $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
         
         $this->waitUnlock($key);
-        $data = $this->obj->get($cachePath, $flag);
+        $data = $this->obj->get($cachePath);
         
         if (false !== $data) {
             $this->stats['readSize'] += strlen($data)/1024;
@@ -164,7 +166,6 @@ class Memcache extends \wf\cache\CacheAbstract
      * 删除缓存
      *
      * @param string $key
-     * @return \wf\cache\CacheAbstract
      */
     public function delete($key) 
     {
@@ -172,9 +173,9 @@ class Memcache extends \wf\cache\CacheAbstract
             return false;
         }
     
-        $this->stats['execTimes'] ++;        
-        $path = $this->getCachePath($key);
+        $this->stats['execTimes'] ++;
         
+        $path = $this->getCachePath($key);
         $this->waitUnlock($key);
         $this->lock($key);
         $this->obj->delete($path);        
@@ -184,12 +185,11 @@ class Memcache extends \wf\cache\CacheAbstract
     /**
      * 清空指定目录下所有缓存
      *
-     * @param string $dir = '' 该参数对于memcache扩展无效
-     * @return \wf\cache\CacheAbstract
+     * @param string $dir = '' 该参数对于redis扩展无效
      */
     public function clear($dir = '') 
     {
-        $this->obj->flush();
+        $this->obj->flushAll();
     
         $this->stats['execTimes'] ++;
     }
@@ -198,13 +198,11 @@ class Memcache extends \wf\cache\CacheAbstract
      * 解锁
      *
      * @param string $key
-     * @return \wf\cache\CacheAbstract
+     * @return \wf\cache\File
      */
     protected function unlock($key) 
     {
         $this->obj->delete($this->lockPath($key));
-        
-        return $this;
     }
     
 }

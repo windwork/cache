@@ -7,21 +7,22 @@
  * @copyright Copyright (c) 2008-2017 Windwork Team. (http://www.windwork.org)
  * @license   http://opensource.org/licenses/MIT
  */
-namespace wf\cache\strategy;
+namespace wf\cache\adapter;
 
 /**
- * Memcached缓存操作实现类，需要安装Memcached扩展
+ * Memcache缓存操作实现类
+ * 需要安装Memcache扩展
  * 
- * @package     wf.cache.strategy
+ * @package     wf.cache.adapter
  * @author      cm <cmpan@qq.com>
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0
  */
-class Memcached extends \wf\cache\CacheAbstract 
+class Memcache extends \wf\cache\CacheAbstract
 {
     /**
      * 
-     * @var \Memcached
+     * @var \Memcache
      */
     private $obj;
     
@@ -37,10 +38,10 @@ class Memcached extends \wf\cache\CacheAbstract
             return;
         }
         
-        $mmcCfg = $cfg['memcached'];
+        $mmcCfg = $cfg['memcache'];
 
         if(!empty($mmcCfg['host'])) {
-            $this->obj = new \Memcached();
+            $this->obj = new \Memcache();
             
             if($mmcCfg['pconnect']) {
                 $connect = @$this->obj->pconnect($mmcCfg['host'], $mmcCfg['port'], $mmcCfg['timeout']);
@@ -73,7 +74,7 @@ class Memcached extends \wf\cache\CacheAbstract
     protected function lock($key) 
     {
         // 设定缓存锁文件的访问和修改时间
-        $this->obj->set($this->lockPath($key), 1);
+        $this->obj->set($this->lockPath($key), 'cache_lock');
         
         return $this;
     }
@@ -96,6 +97,7 @@ class Memcached extends \wf\cache\CacheAbstract
      * @param string $key
      * @param mixed $value
      * @param int $expire = null 单位（s），不能超过30天， 默认使用配置中的过期设置， 如果要设置不删除缓存，请设置一个大点的整数
+     * @return \wf\cache\CacheAbstract
      */
     public function write($key, $value, $expire = null) 
     {
@@ -115,9 +117,11 @@ class Memcached extends \wf\cache\CacheAbstract
         $this->stats['writeSize'] += strlen($value)/1024;
             
         try {
-            $this->waitUnlock($key);            
+            $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
+            
+            $this->waitUnlock($key);
             $this->lock($key);
-            $set = $this->obj->set($cachePath, $value, $expire);
+            $set = $this->obj->set($cachePath, $value, $flag, $expire);
             $this->unlock($key);
         } catch (\wf\cache\Exception $e) {
             $this->unlock($key);
@@ -140,9 +144,12 @@ class Memcached extends \wf\cache\CacheAbstract
         $this->stats['execTimes'] ++;
         $this->stats['readTimes'] ++;
         
+        
         $cachePath = $this->getCachePath($key);
+        $flag = $this->isCompress ? MEMCACHE_COMPRESSED : 0;
+        
         $this->waitUnlock($key);
-        $data = $this->obj->get($cachePath);
+        $data = $this->obj->get($cachePath, $flag);
         
         if (false !== $data) {
             $this->stats['readSize'] += strlen($data)/1024;
@@ -157,6 +164,7 @@ class Memcached extends \wf\cache\CacheAbstract
      * 删除缓存
      *
      * @param string $key
+     * @return \wf\cache\CacheAbstract
      */
     public function delete($key) 
     {
@@ -164,13 +172,12 @@ class Memcached extends \wf\cache\CacheAbstract
             return false;
         }
     
-        $this->stats['execTimes'] ++;
-        
+        $this->stats['execTimes'] ++;        
         $path = $this->getCachePath($key);
+        
         $this->waitUnlock($key);
         $this->lock($key);
-        $this->obj->delete($path);
-        
+        $this->obj->delete($path);        
         $this->unlock($key);
     }
     
@@ -178,6 +185,7 @@ class Memcached extends \wf\cache\CacheAbstract
      * 清空指定目录下所有缓存
      *
      * @param string $dir = '' 该参数对于memcache扩展无效
+     * @return \wf\cache\CacheAbstract
      */
     public function clear($dir = '') 
     {
@@ -190,7 +198,7 @@ class Memcached extends \wf\cache\CacheAbstract
      * 解锁
      *
      * @param string $key
-     * @return \wf\cache\File
+     * @return \wf\cache\CacheAbstract
      */
     protected function unlock($key) 
     {

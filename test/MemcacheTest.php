@@ -1,7 +1,7 @@
 <?php
 require_once '../lib/CacheInterface.php';
 require_once '../lib/CacheAbstract.php';
-require_once '../lib/strategy/Memcache.php';
+require_once '../lib/adapter/Memcache.php';
 
 /**
  * File test case.
@@ -36,7 +36,7 @@ class MemcacheTest extends PHPUnit_Framework_TestCase
             ],
         );
 
-        $this->cache = new \wf\cache\strategy\Memcache($cfg);
+        $this->cache = new \wf\cache\adapter\Memcache($cfg);
     }
     
     /**

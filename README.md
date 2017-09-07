@@ -29,7 +29,7 @@ $cfg = [
     'compress'   => 0,             // 是否启用缓存内容压缩后存贮
     'class'    => 'File',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
 ];
-$class = "\\wf\\cache\\strategy\\{$cfg['class']}";
+$class = "\\wf\\cache\\adapter\\{$cfg['class']}";
 $cache = new $class($cfg);
 
 // 从缓存读取数据
@@ -66,7 +66,7 @@ $cfg = [
     'dir'        => 'data/cache',  // 缓存文件夹，如果使用缓存服务器，则是缓存变量的前缀
     'expire'     => 3600,          // 缓存更新周期(默认：3600s)
     'compress'   => 0,             // 是否启用缓存内容压缩后存贮
-    'class'    => '\\wf\\cache\\strategy\\Memcache',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
+    'class'    => '\\wf\\cache\\adapter\\Memcache',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
 
     ['memcache'] => [
         'host'        => '127.0.0.1',     //
@@ -75,7 +75,7 @@ $cfg = [
         'timeout'     => 1,               // 超时时间（秒）
     ],
 ];
-$class = "\\wf\\cache\\strategy\\{$cfg['class']}";
+$class = "\\wf\\cache\\adapter\\{$cfg['class']}";
 $cache = new $class($cfg);
 
 // Memcached
@@ -84,7 +84,7 @@ $cfg = [
     'dir'        => 'data/cache',  // 缓存文件夹，如果使用缓存服务器，则是缓存变量的前缀
     'expire'     => 3600,          // 缓存更新周期(默认：3600s)
     'compress'   => 0,             // 是否启用缓存内容压缩后存贮
-    'class'      => '\\wf\\cache\\strategy\\Memcached',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
+    'class'      => '\\wf\\cache\\adapter\\Memcached',        // 缓存模式，File）文件缓存；Memcache）使用Memcache缓存；Memcached）使用Memcached缓存；Redis）使用Redis缓存
 
     ['memcached'] => [
         'host'        => '127.0.0.1',     //
@@ -94,7 +94,7 @@ $cfg = [
     ],
 ];
 
-$class = "\\wf\\cache\\strategy\\{$cfg['class']}";
+$class = "\\wf\\cache\\adapter\\{$cfg['class']}";
 $cache = new $class($cfg);
 
 ```
@@ -123,7 +123,7 @@ $cfg = [
     ],
 ];
 
-$class = "\\wf\\cache\\strategy\\{$cfg['class']}";
+$class = "\\wf\\cache\\adapter\\{$cfg['class']}";
 $cache = new $class($cfg);
 
 ```

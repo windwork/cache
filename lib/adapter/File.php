@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2008-2017 Windwork Team. (http://www.windwork.org)
  * @license   http://opensource.org/licenses/MIT
  */
-namespace wf\cache\strategy;
+namespace wf\cache\adapter;
 
 /**
  * 文件缓存操作实现类
@@ -15,7 +15,7 @@ namespace wf\cache\strategy;
  * 实现逻辑：通过var_dump把变量保存到文件，读取缓存时再包含文件。
  * （旧版通过变量系列化保存到文件再读取，新版本PHP默认开启opcache通过包含文件性能更高。）
  * 
- * @package     wf.cache.strategy
+ * @package     wf.cache.adapter
  * @author      cm <cmpan@qq.com>
  * @link        http://docs.windwork.org/manual/wf.cache.html
  * @since       0.1.0

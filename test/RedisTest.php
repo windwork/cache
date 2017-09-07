@@ -1,7 +1,7 @@
 <?php
 require_once '../lib/CacheInterface.php';
 require_once '../lib/CacheAbstract.php';
-require_once '../lib/strategy/Redis.php';
+require_once '../lib/adapter/Redis.php';
 
 
 /**
@@ -39,7 +39,7 @@ class RedisTest extends PHPUnit_Framework_TestCase
             ],
         );
 
-        $this->cache = new \wf\cache\strategy\Redis($cfg);
+        $this->cache = new \wf\cache\adapter\Redis($cfg);
     }
     
     /**

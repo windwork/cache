@@ -1,7 +1,7 @@
 <?php
 require_once '../lib/CacheInterface.php';
 require_once '../lib/CacheAbstract.php';
-require_once '../lib/strategy/File.php';
+require_once '../lib/adapter/File.php';
 
 /**
  * File test case.
@@ -30,7 +30,7 @@ class FileTest extends PHPUnit_Framework_TestCase
             'class'             => '',
         );
         
-        $this->cache = new \wf\cache\strategy\File($cfg);
+        $this->cache = new \wf\cache\adapter\File($cfg);
     }
     
     /**
