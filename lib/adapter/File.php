@@ -228,7 +228,7 @@ class File extends \wf\cache\CacheAbstract
             $data['value'] = gzdeflate($data['value']);
         }
         
-        $text = "<?php\n/**\n * Auto generate by windwork cache engine,\nplease don't edit me.\n */\nreturn " . var_export($data, true) . ';';        
+        $text = "<?php\n# Auto generate by windwork cache engine,please don't edit me.\nreturn " . var_export($data, true) . ';';
         return @file_put_contents($cachePath, $text);
     }
 

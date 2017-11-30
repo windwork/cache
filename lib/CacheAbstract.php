@@ -123,7 +123,7 @@ abstract class CacheAbstract implements CacheInterface
             throw new \wf\cache\Exception("Invalid cache key: {$key}");
         }
         
-        $path = $this->cacheDir . '/'. $key;
+        $path = $this->cacheDir . '/'. $key . '.php';
         
         return $path;
     }
